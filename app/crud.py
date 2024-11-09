@@ -2,6 +2,7 @@
 Creating CRUD operations and routes + search and filters
 '''
 # APIRouter helps in organizing routes and creating reusable code | Depends injects dependencies into route function
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 # SQLALCHEMY session for interaction with database
 from sqlalchemy.orm import Session
@@ -70,3 +71,22 @@ async def delete_product(product_id: int, db: Session = Depends(init_db)):
     db.delete(db_product) # delete the product 
     db.commit() # commit changes to the database
     return
+
+# Search and Filter products
+# using GET method to retrieve products, the response will be List of products
+@product_router.get('/products', response_model=List[ProductResponse])
+# func to get products with optional price and category parameters
+async def get_products(price: Optional[float] = None, category_id: Optional[int] = None, db: Session = Depends(init_db)):
+    # query the to get all products from the Product table
+    query = db.query(Product)
+
+    # checking if price parameter was provided 
+    if price:
+        # getting the product with price equal to or less than specified
+        query = query.filter(Product.price <= price)
+    # checking if category parameter was provided
+    if category_id:
+        # filtering the products to get the category_id that was specified
+        query = query.filter(Product.category_id == category_id)
+    # return all products based on the query
+    return query.all()
