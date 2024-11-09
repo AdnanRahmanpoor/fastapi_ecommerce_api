@@ -2,11 +2,11 @@
 Creating CRUD operations and routes + search and filters
 '''
 # APIRouter helps in organizing routes and creating reusable code | Depends injects dependencies into route function
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 # SQLALCHEMY session for interaction with database
 from sqlalchemy.orm import Session
 # importing schemas for creation of products and getting info about them
-from .schemas import ProductCreate, ProductResponse
+from .schemas import ProductCreate, ProductResponse, ProductUpdate
 # importing init_db function so session can interact with a database
 from .database import init_db
 # importing product model
@@ -34,4 +34,39 @@ async def read_product(product_id: int, db: Session = Depends(init_db)):
     # return a database query which looks in Product table and get the first item that matches the product id
     return db.query(Product).filter(Product.id == product_id).first()
 
-# 
+# Updating a product
+# PUT method which will update a product based on product id
+@product_router.put('/products/{product_id}', response_model=ProductResponse)
+# func to update a product based on product id
+async def update_product(product_id: int, product: ProductUpdate, db: Session = Depends(init_db)):
+    # query to get a product based on product id
+    db_product = db.query(Product).filter(Product.id == product_id).first()
+
+    # if the product is not available throw an 404 error
+    if not db_product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    # if the product is available then update the fields which were specified in the request
+    for key, value in product.dict(exclude_unset=True).items():
+        setattr(db_product, key, value)
+
+    db.commit() # commit changes to the database
+    db.refresh(db_product) # refresh database 
+    return db_product # return the updated product
+
+# Delete a product
+# DELETE method using productrouter to delete a product based on product_id, and uses 204 https response code for successful deletion
+@product_router.delete('/products/{product_id}', status_code=status.HTTP_204_NO_CONTENT)
+# func which selects a product based on product_id and deletes it
+async def delete_product(product_id: int, db: Session = Depends(init_db)):
+    # querying a product from the database which matches the product_id
+    db_product = db.query(Product).filter(Product.id == product_id).first()
+
+    # if the product doesnt exist throw a 404 not found error
+    if not db_product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Product not found')
+
+    # if the product exists
+    db.delete(db_product) # delete the product 
+    db.commit() # commit changes to the database
+    return

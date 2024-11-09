@@ -20,3 +20,10 @@ class ProductCreate(ProductBase):
 # this is for retreiving product data from productbase, and assigns an 'id' to each product response
 class ProductResponse(ProductBase):
     id: int
+
+# schema for updating products
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    category_id: Optional[int] = None
