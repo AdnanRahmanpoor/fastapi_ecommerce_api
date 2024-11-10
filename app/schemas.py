@@ -21,9 +21,23 @@ class ProductCreate(ProductBase):
 class ProductResponse(ProductBase):
     id: int
 
+    class Config:
+        orm_mode = True
+
 # schema for updating products
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
     category_id: Optional[int] = None
+
+# schema for create category
+class CategoryCreate(BaseModel):
+    name: str
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
